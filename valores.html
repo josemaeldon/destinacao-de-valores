@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Destinação de Valores</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #64748b;
+            --success-color: #059669;
+            --background-color: #f8fafc;
+            --card-background: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            padding: 10px;
+            overflow-x: hidden;
+        }
+        .container { max-width: 1200px; margin: 0 auto; width: 100%; min-width: 0; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 2.5rem; font-weight: 700; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 8px; }
+        .header p { color: rgba(255, 255, 255, 0.8); font-size: 1.1rem; }
+        .form-card {
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            padding: 32px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 32px;
+            backdrop-filter: blur(10px);
+        }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-label { font-weight: 600; color: var(--text-primary); margin-bottom: 8px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-select, .form-input { padding: 16px; border: 2px solid var(--border-color); border-radius: var(--border-radius-sm); font-size: 16px; transition: all 0.3s ease; background: white; }
+        .form-select:focus, .form-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); transform: translateY(-1px); }
+        .custom-options { display: none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px; padding: 24px; background: linear-gradient(135deg, #f8fafc, #e2e8f0); border-radius: var(--border-radius-sm); }
+        .custom-options.show { display: grid; }
+        .button-group { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+            justify-content: center;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .btn-secondary { background: var(--secondary-color); color: white; }
+        .btn-secondary:hover { background: #475569; transform: translateY(-2px);}
+        .btn-success { background: var(--success-color); color: white; }
+        .btn-success:hover { background: #047857; transform: translateY(-2px);}
+        .btn-outline { background: transparent; border: 2px solid var(--primary-color); color: var(--primary-color);}
+        .btn-outline:hover { background: var(--primary-color); color: white;}
+        .results-container { margin-top: 32px;}
+        .result-card { background: var(--card-background); border-radius: var(--border-radius); padding: 24px; box-shadow: var(--shadow-md); margin-bottom: 24px;}
+        .result-card h3 { color: var(--primary-color); font-size: 1.5rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;}
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--border-radius-sm); margin-bottom: 16px;}
+        .calculation-table { width: 100%; min-width: 700px; border-collapse: collapse; border-radius: var(--border-radius-sm); overflow: hidden; box-shadow: var(--shadow-sm); display: table !important; background: white;}
+        .calculation-table th { background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white; padding: 10px 6px; font-weight: 600; text-align: center; font-size: 0.75rem; white-space: nowrap;}
+        .calculation-table td { padding: 10px 6px; border-bottom: 1px solid var(--border-color); text-align: right; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px;}
+        .calculation-table td:nth-child(1) { max-width: 70px; font-size: 0.7rem;}
+        .calculation-table td:nth-child(2) { text-align: left; max-width: 120px; font-size: 0.7rem;}
+        .calculation-table td:nth-child(3) { max-width: 80px; font-weight: 600; color: var(--primary-color);}
+        .calculation-table td:nth-child(4) { text-align: left; max-width: 90px; font-size: 0.7rem;}
+        .calculation-table td:nth-child(5),
+        .calculation-table td:nth-child(6),
+        .calculation-table td:nth-child(7) { max-width: 70px; font-size: 0.75rem;}
+        .mobile-cards { display: none; margin-top: 16px;}
+        .mobile-card { background: white; border-radius: var(--border-radius-sm); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border-left: 4px solid var(--primary-color);}
+        .mobile-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);}
+        .mobile-card-title { font-weight: 600; color: var(--primary-color); font-size: 0.9rem;}
+        .mobile-card-date { font-size: 0.75rem; color: var(--text-secondary);}
+        .mobile-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem;}
+        .mobile-card-item { display: flex; justify-content: space-between; padding: 4px 0;}
+        .mobile-card-label { color: var(--text-secondary); font-size: 0.75rem;}
+        .mobile-card-value { font-weight: 600; color: var(--text-primary);}
+        @media (max-width: 768px) {
+            .calculation-table { min-width: 600px; font-size: 0.75rem;}
+            .calculation-table th { padding: 8px 4px; font-size: 0.7rem;}
+            .calculation-table td { padding: 8px 4px; font-size: 0.75rem;}
+        }
+        @media (max-width: 600px) {
+            .calculation-table { min-width: 500px;}
+            .calculation-table th,
+            .calculation-table td { padding: 6px 3px; font-size: 0.7rem;}
+            .calculation-table td:nth-child(1) { max-width: 50px; font-size: 0.65rem;}
+            .calculation-table td:nth-child(2) { max-width: 80px; font-size: 0.65rem;}
+            .calculation-table td:nth-child(3) { max-width: 60px;}
+            .calculation-table td:nth-child(4) { max-width: 60px; font-size: 0.65rem;}
+            .calculation-table td:nth-child(5),
+            .calculation-table td:nth-child(6),
+            .calculation-table td:nth-child(7) { max-width: 50px; font-size: 0.65rem;}
+        }
+        @media (max-width: 480px) {
+            .calculation-container { margin: 0 -5px; padding: 0 5px;}
+            .mobile-cards { display: block;}
+            .calculation-table { margin-bottom: 20px; min-width: 450px;}
+        }
+        .calculation-table tbody tr:hover { background: #f8fafc;}
+        .calculation-table tbody tr:last-child td { border-bottom: none;}
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary);}
+        .empty-state-icon { font-size: 4rem; margin-bottom: 16px; opacity: 0.5;}
+        .loading { opacity: 0.6; pointer-events: none;}
+        .fade-in { animation: fadeIn 0.5s ease-in-out;}
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);}}
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success-color);
+            color: white;
+            padding: 16px 24px;
+            border-radius: var(--border-radius-sm);
+            box-shadow: var(--shadow-lg);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        .toast.show { transform: translateX(0);}
+        @media (max-width: 768px) {
+            body { padding: 5px;}
+            .form-grid { grid-template-columns: 1fr; gap: 16px;}
+            .button-group { flex-direction: column; gap: 8px;}
+            .btn { width: 100%; min-width: auto; padding: 12px 20px; font-size: 14px;}
+            .header h1 { font-size: 2rem;}
+            .form-card { padding: 16px; margin-bottom: 20px;}
+            .result-card { padding: 16px; margin-bottom: 16px;}
+            .custom-options { gap: 12px; padding: 16px;}
+            .summary-cards { grid-template-columns: 1fr 1fr; gap: 12px;}
+            .summary-card { padding: 12px;}
+            .summary-card .value { font-size: 1.1rem;}
+        }
+        @media (max-width: 480px) {
+            .header h1 { font-size: 1.8rem;}
+            .header p { font-size: 1rem;}
+            .header div p { font-size: 0.8rem;}
+            .form-card, .result-card { padding: 12px;}
+            .form-select, .form-input { padding: 12px; font-size: 14px;}
+            .btn { padding: 10px 16px; font-size: 13px;}
+            .summary-cards { grid-template-columns: 1fr; gap: 8px;}
+            .summary-card { padding: 10px;}
+            .summary-card h4 { font-size: 0.7rem;}
+            .summary-card .value { font-size: 1rem;}
+            .toast { right: 10px; left: 10px; transform: translateY(-100px); font-size: 14px; padding: 12px 16px;}
+            .toast.show { transform: translateY(0);}
+        }
+        @media (max-width: 320px) {
+            .header h1 { font-size: 1.5rem;}
+            .btn { padding: 8px 12px; font-size: 12px;}
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .summary-card { background: linear-gradient(135deg, #f8fafc, #e2e8f0); padding: 16px; border-radius: var(--border-radius-sm); text-align: center; min-width: 0;}
+        .summary-card h4 { color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .summary-card .value { font-size: 1.3rem; font-weight: 700; color: var(--primary-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .cache-status { position: fixed; bottom: 20px; right: 20px; background: rgba(37, 99, 235, 0.9); color: white; padding: 8px 12px; border-radius: 20px; font-size: 0.8rem; z-index: 1000; opacity: 0.7; transition: opacity 0.3s ease;}
+        .cache-status:hover { opacity: 1;}
+        @media (max-width: 768px) {
+            .cache-status { bottom: 10px; right: 10px; font-size: 0.7rem; padding: 6px 10px;}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Calculadora de Destinação</h1>
+            <p>Calcule a distribuição de valores de forma prática e elegante</p>
+            <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 12px; padding: 16px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.2);">
+                <p style="margin: 0; font-size: 14px; color: rgba(255,255,255,0.9);">
+                    📋 <strong>Como funciona:</strong> Primeiro calcula-se o percentual da <strong>Cúria</strong> sobre o valor total, 
+                    depois o valor restante é dividido entre <strong>Comunidade</strong> e <strong>Paróquia</strong> conforme os percentuais definidos.
+                </p>
+            </div>
+        </div>
+        <div class="form-card no-print">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Tipo de Comunidade</label>
+                    <select id="tipoComunitario" class="form-select">
+                        <option value="urbana">🏙️ Comunidade Urbana</option>
+                        <option value="rural">🏘️ Comunidade Rural</option>
+                        <option value="personalizado">⚙️ Cálculo Personalizado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Valor Total</label>
+                    <input type="text" id="valor" class="form-input" placeholder="R$ 0,00" maxlength="16" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nome da Comunidade</label>
+                    <input type="text" id="nomeComunidade" class="form-input" placeholder="Digite o nome da comunidade" maxlength="48" />
+                </div>
+            </div>
+            <div class="custom-options" id="customOptions">
+                <div style="grid-column: 1/-1; background: #dbeafe; padding: 16px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #2563eb;">
+                    <h4 style="margin: 0 0 8px 0; color: #1e40af;">💡 Como funciona o cálculo personalizado:</h4>
+                    <p style="margin: 0; font-size: 14px; color: #1e40af;">
+                        1º) <strong>Cúria</strong>: percentual calculado sobre o valor total<br>
+                        2º) <strong>Comunidade + Paróquia</strong>: percentuais calculados sobre o valor restante (após desconto da Cúria). A soma de ambos deve ser 100%.
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cúria (% do total)</label>
+                    <input type="number" id="percentualCuria" class="form-input" placeholder="13" min="0" max="100" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Comunidade (% do restante)</label>
+                    <input type="number" id="percentualComunidade" class="form-input" placeholder="60" min="0" max="100" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Paróquia (% do restante)</label>
+                    <input type="number" id="percentualParoquia" class="form-input" placeholder="40" min="0" max="100" />
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" id="btnCalcular" onclick="calcular()" aria-label="Calcular">
+                    ➕ Calcular
+                </button>
+                <button class="btn btn-secondary" onclick="imprimirLista()" aria-label="Imprimir">
+                    🖨️ Imprimir
+                </button>
+                <button class="btn btn-success" onclick="baixarExcel()" aria-label="Baixar Excel">
+                    📊 Excel
+                </button>
+                <button class="btn btn-outline" onclick="limpar()" aria-label="Limpar">
+                    🗑️ Limpar
+                </button>
+            </div>
+        </div>
+        <div class="results-container">
+            <div id="ruralResults" class="no-print calculation-container"></div>
+            <div id="urbanaResults" class="no-print calculation-container"></div>
+            <div id="personalizedResults" class="no-print calculation-container"></div>
+        </div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <div class="cache-status" id="cacheStatus">💾 Cache Ativo</div>
+    <script>
+        class CacheManager {
+            constructor() {
+                this.cacheKey = 'calculadora_destinacao_cache';
+                this.dataKey = 'calculadora_destinacao_data';
+                this.init();
+            }
+            init() {
+                this.storage = this.getStorageMethod();
+                this.updateCacheStatus();
+            }
+            getStorageMethod() {
+                try {
+                    if (typeof(Storage) !== "undefined" && window.localStorage) {
+                        localStorage.setItem('test', 'test');
+                        localStorage.removeItem('test');
+                        return {
+                            type: 'localStorage',
+                            get: (key) => localStorage.getItem(key),
+                            set: (key, value) => localStorage.setItem(key, value),
+                            remove: (key) => localStorage.removeItem(key)
+                        };
+                    }
+                } catch(e) {}
+                try {
+                    return {
+                        type: 'cookies',
+                        get: (key) => this.getCookie(key),
+                        set: (key, value) => this.setCookie(key, value, 365),
+                        remove: (key) => this.deleteCookie(key)
+                    };
+                } catch(e) {}
+                const memoryStorage = {};
+                return {
+                    type: 'memory',
+                    get: (key) => memoryStorage[key],
+                    set: (key, value) => { memoryStorage[key] = value; },
+                    remove: (key) => { delete memoryStorage[key]; }
+                };
+            }
+            setCookie(name, value, days) {
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+                document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`;
+            }
+            getCookie(name) {
+                const nameEQ = name + "=";
+                const ca = document.cookie.split(';');
+                for(let i = 0; i < ca.length; i++) {
+                    let c = ca[i];
+                    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                    if (c.indexOf(nameEQ) === 0) {
+                        return decodeURIComponent(c.substring(nameEQ.length, c.length));
+                    }
+                }
+                return null;
+            }
+            deleteCookie(name) {
+                document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+            }
+            updateCacheStatus() {
+                const statusEl = document.getElementById('cacheStatus');
+                if (statusEl) {
+                    const icons = {
+                        'localStorage': '💾',
+                        'cookies': '🍪', 
+                        'memory': '🧠'
+                    };
+                    statusEl.textContent = `${icons[this.storage.type]} Cache ${this.storage.type}`;
+                }
+            }
+            saveData(data) {
+                try {
+                    const jsonData = JSON.stringify(data);
+                    this.storage.set(this.dataKey, jsonData);
+                    this.storage.set(this.cacheKey, new Date().toISOString());
+                    return true;
+                } catch(e) { return false;}
+            }
+            loadData() {
+                try {
+                    const jsonData = this.storage.get(this.dataKey);
+                    return jsonData ? JSON.parse(jsonData) : null;
+                } catch(e) { return null;}
+            }
+            clearData() {
+                try {
+                    this.storage.remove(this.dataKey);
+                    this.storage.remove(this.cacheKey);
+                    return true;
+                } catch(e) { return false;}
+            }
+            getLastSaved() {
+                try {
+                    return this.storage.get(this.cacheKey);
+                } catch(e) { return null;}
+            }
+        }
+
+        const cacheManager = new CacheManager();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            setupEventListeners();
+            carregarResultadosSalvos();
+        }
+        function setupEventListeners() {
+            document.getElementById('valor').addEventListener('input', function() {
+                this.value = formatarMoedaCampo(this.value);
+            });
+            document.getElementById('valor').addEventListener('blur', function() {
+                this.value = formatarMoedaCampo(this.value);
+            });
+            document.getElementById('tipoComunitario').addEventListener('change', function() {
+                toggleCustomOptions(this.value === "personalizado");
+            });
+            
+            document.getElementById('percentualCuria').addEventListener('input', validatePercentages);
+
+            document.getElementById('percentualComunidade').addEventListener('input', function() {
+                const comunidadeValue = parseFloat(this.value) || 0;
+                if (comunidadeValue >= 0 && comunidadeValue <= 100) {
+                    document.getElementById('percentualParoquia').value = (100 - comunidadeValue).toFixed(0);
+                }
+                validatePercentages();
+            });
+
+            document.getElementById('percentualParoquia').addEventListener('input', function() {
+                const paroquiaValue = parseFloat(this.value) || 0;
+                if (paroquiaValue >= 0 && paroquiaValue <= 100) {
+                    document.getElementById('percentualComunidade').value = (100 - paroquiaValue).toFixed(0);
+                }
+                validatePercentages();
+            });
+
+            window.addEventListener('beforeunload', function() {
+                salvarResultados();
+            });
+            setInterval(salvarResultados, 30000);
+        }
+        function toggleCustomOptions(show) {
+            const customOptions = document.getElementById("customOptions");
+            if (show) customOptions.classList.add('show');
+            else customOptions.classList.remove('show');
+        }
+        function validatePercentages() {
+            const curia = parseFloat(document.getElementById('percentualCuria').value) || 0;
+            const comunidade = parseFloat(document.getElementById('percentualComunidade').value) || 0;
+            const paroquia = parseFloat(document.getElementById('percentualParoquia').value) || 0;
+            const btnCalcular = document.getElementById("btnCalcular");
+
+            const isCustom = document.getElementById('tipoComunitario').value === 'personalizado';
+            if (!isCustom) {
+                btnCalcular.disabled = false;
+                return;
+            }
+
+            if (curia > 100) {
+                showToast('⚠️ O percentual da Cúria não pode exceder 100%', 'warning');
+                btnCalcular.disabled = true;
+                return;
+            }
+
+            const somaComunidadeParoquia = Math.round(comunidade + paroquia);
+            if ((comunidade > 0 || paroquia > 0) && somaComunidadeParoquia !== 100) {
+                showToast('⚠️ A soma de Comunidade + Paróquia deve ser 100%', 'warning');
+                btnCalcular.disabled = true;
+                return;
+            }
+
+            btnCalcular.disabled = false;
+        }
+        function formatarMoedaCampo(valor) {
+            valor = valor.replace(/\D/g, '');
+            if (valor.length === 0) { return ''; }
+            valor = (parseInt(valor) / 100).toFixed(2);
+            valor = valor.replace('.', ',');
+            valor = valor.replace(/(\d)(?=(\d{3})+\,)/g, '$1.');
+            return 'R$ ' + valor;
+        }
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+        function salvarResultados() {
+            try {
+                const data = {
+                    rural: document.getElementById('ruralResults').innerHTML,
+                    urbana: document.getElementById('urbanaResults').innerHTML,
+                    personalized: document.getElementById('personalizedResults').innerHTML,
+                    timestamp: new Date().toISOString()
+                };
+                cacheManager.saveData(data);
+            } catch(e) {}
+        }
+        function carregarResultadosSalvos() {
+            try {
+                const data = cacheManager.loadData();
+                if (data) {
+                    if (data.rural) document.getElementById('ruralResults').innerHTML = data.rural;
+                    if (data.urbana) document.getElementById('urbanaResults').innerHTML = data.urbana;
+                    if (data.personalized) document.getElementById('personalizedResults').innerHTML = data.personalized;
+                    const lastSaved = cacheManager.getLastSaved();
+                    if (lastSaved) {
+                        const date = new Date(lastSaved);
+                        showToast(`📥 Dados carregados do cache (${date.toLocaleDateString('pt-BR')} ${date.toLocaleTimeString('pt-BR')})`, 'info');
+                    }
+                }
+            } catch(e) {}
+        }
+        function calcular() {
+            const valorCampo = document.getElementById("valor").value.replace('R$ ', '').replace(/\./g, '').replace(',', '.');
+            const valor = parseFloat(valorCampo);
+            const tipoComunitario = document.getElementById("tipoComunitario").value;
+            const nomeComunidade = document.getElementById("nomeComunidade").value;
+            if (isNaN(valor) || valor <= 0) {
+                showToast('⚠️ Por favor, insira um valor válido', 'warning');
+                return;
+            }
+            if (!nomeComunidade.trim()) {
+                showToast('⚠️ Por favor, insira o nome da comunidade', 'warning');
+                return;
+            }
+            let curia, comunidade, paroquia;
+            if (tipoComunitario === "personalizado") {
+                const percentualCuriaInput = document.getElementById("percentualCuria").value;
+                const percentualComunidadeInput = document.getElementById("percentualComunidade").value;
+                const percentualParoquiaInput = document.getElementById("percentualParoquia").value;
+
+                if (!percentualCuriaInput || !percentualComunidadeInput || !percentualParoquiaInput) {
+                    showToast('⚠️ Por favor, preencha todos os percentuais', 'warning');
+                    return;
+                }
+
+                const percentualCuria = parseFloat(percentualCuriaInput) / 100;
+                const percentualComunidade = parseFloat(percentualComunidadeInput) / 100;
+                const percentualParoquia = parseFloat(percentualParoquiaInput) / 100;
+
+                if (isNaN(percentualCuria) || isNaN(percentualComunidade) || isNaN(percentualParoquia)) {
+                    showToast('⚠️ Os percentuais devem ser números válidos', 'warning');
+                    return;
+                }
+                if (percentualCuria > 1) {
+                    showToast('⚠️ O percentual da Cúria não pode exceder 100%', 'warning');
+                    return;
+                }
+                if (Math.round((percentualComunidade + percentualParoquia) * 100) !== 100) {
+                    showToast('⚠️ A soma de Comunidade + Paróquia deve ser 100%', 'warning');
+                    return;
+                }
+                curia = valor * percentualCuria;
+                const valorRestante = valor - curia;
+                comunidade = valorRestante * percentualComunidade;
+                paroquia = valorRestante * percentualParoquia;
+                adicionarResultado("personalizedResults", valorCampo, "Cálculo Personalizado", curia, comunidade, paroquia, 
+                    `${(percentualCuria * 100).toFixed(0)}% sobre total (Cúria)`, 
+                    `${(percentualComunidade * 100).toFixed(0)}% do restante (Comunidade)`, 
+                    `${(percentualParoquia * 100).toFixed(0)}% do restante (Paróquia)`, nomeComunidade);
+            } else {
+                if (tipoComunitario === "rural") {
+                    curia = valor * 0.13;
+                    const valorRestante = valor - curia;
+                    comunidade = valorRestante * 0.60;
+                    paroquia = valorRestante * 0.40;
+                    adicionarResultado("ruralResults", valorCampo, "Comunidade Rural", curia, comunidade, paroquia, 
+                        "13% (Cúria)", "60% (Comunidade)", "40% (Paroquial)", nomeComunidade);
+                } else if (tipoComunitario === "urbana") {
+                    curia = valor * 0.13;
+                    const valorRestante = valor - curia;
+                    comunidade = valorRestante * 0.40;
+                    paroquia = valorRestante * 0.60;
+                    adicionarResultado("urbanaResults", valorCampo, "Comunidade Urbana", curia, comunidade, paroquia, 
+                        "13% (Cúria)", "40% (Comunidade)", "60% (Paroquial)", nomeComunidade);
+                }
+            }
+            setTimeout(salvarResultados, 100);
+            showToast('✅ Cálculo realizado e salvo automaticamente!');
+            document.getElementById('valor').value = '';
+            document.getElementById('nomeComunidade').value = '';
+        }
+        function adicionarResultado(divId, valorCampo, tipoComunitario, curia, comunidade, paroquia, textoCuria, textoComunidade, textoParoquia, nomeComunidade) {
+            let resultDiv = document.getElementById(divId);
+            if (!resultDiv.querySelector(".result-card")) {
+                resultDiv.innerHTML = `
+                    <div class="result-card fade-in">
+                        <h3>
+                            ${getTypeIcon(tipoComunitario)} ${tipoComunitario}
+                        </h3>
+                        <div class="summary-cards">
+                            <div class="summary-card">
+                                <h4>Total Calculado</h4>
+                                <div class="value" id="total-${divId}">R$ 0,00</div>
+                            </div>
+                            <div class="summary-card">
+                                <h4>Registros</h4>
+                                <div class="value" id="count-${divId}">0</div>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="calculation-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Comunidade</th>
+                                        <th>Total</th>
+                                        <th>Tipo</th>
+                                        <th>Cúria</th>
+                                        <th>Comun.</th>
+                                        <th>Paróq.</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="mobile-cards"></div>
+                    </div>
+                `;
+            }
+            const tabela = resultDiv.querySelector(".calculation-table tbody");
+            const mobileCards = resultDiv.querySelector(".mobile-cards");
+            const novaData = new Date().toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit'
+            });
+            const valorNumerico = parseFloat(valorCampo);
+            const valorTotal = formatarMoeda(valorNumerico);
+            if (tabela) {
+                const linha = document.createElement("tr");
+                linha.innerHTML = `
+                    <td>${novaData}</td>
+                    <td style="text-align: left;" title="${nomeComunidade}">${nomeComunidade}</td>
+                    <td title="${valorTotal}">${valorTotal}</td>
+                    <td style="text-align: left;" title="${tipoComunitario}">${tipoComunitario}</td>
+                    <td title="${formatarMoeda(curia)}">${formatarMoeda(curia)}</td>
+                    <td title="${formatarMoeda(comunidade)}">${formatarMoeda(comunidade)}</td>
+                    <td title="${formatarMoeda(paroquia)}">${formatarMoeda(paroquia)}</td>
+                `;
+                tabela.appendChild(linha);
+            }
+            if (mobileCards) {
+                const mobileCard = document.createElement("div");
+                mobileCard.className = "mobile-card";
+                mobileCard.innerHTML = `
+                    <div class="mobile-card-header">
+                        <div class="mobile-card-title">${nomeComunidade}</div>
+                        <div class="mobile-card-date">${novaData}</div>
+                    </div>
+                    <div class="mobile-card-item" style="margin-bottom: 8px; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                        <span class="mobile-card-label">Valor Total:</span>
+                        <span class="mobile-card-value" style="color: var(--primary-color);">${valorTotal}</span>
+                    </div>
+                    <div class="mobile-card-grid">
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">Cúria:</span>
+                            <span class="mobile-card-value">${formatarMoeda(curia)}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">Comunidade:</span>
+                            <span class="mobile-card-value">${formatarMoeda(comunidade)}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">Paróquia:</span>
+                            <span class="mobile-card-value">${formatarMoeda(paroquia)}</span>
+                        </div>
+                        <div class="mobile-card-item">
+                            <span class="mobile-card-label">Tipo:</span>
+                            <span class="mobile-card-value">${tipoComunitario}</span>
+                        </div>
+                    </div>
+                `;
+                mobileCards.appendChild(mobileCard);
+            }
+            updateSummary(divId);
+        }
+        function updateSummary(divId) {
+            const table = document.querySelector(`#${divId} .calculation-table tbody`);
+            if (!table) return;
+            const rows = table.querySelectorAll('tr');
+            let total = 0;
+            rows.forEach(row => {
+                const valueCell = row.children[2].textContent.trim();
+                let cleanValue = valueCell.replace(/R\$\s?/, '');
+                cleanValue = cleanValue.replace(/\./g, '|||');
+                cleanValue = cleanValue.replace(',', '.');
+                cleanValue = cleanValue.replace(/\|\|\|/g, '');
+                const value = parseFloat(cleanValue);
+                if (!isNaN(value) && value > 0) {
+                    total += value;
+                }
+            });
+            const totalElement = document.getElementById(`total-${divId}`);
+            const countElement = document.getElementById(`count-${divId}`);
+            if (totalElement) totalElement.textContent = formatarMoeda(total);
+            if (countElement) countElement.textContent = rows.length;
+        }
+        function getTypeIcon(tipo) {
+            switch (tipo) {
+                case 'Comunidade Rural': return '🏘️';
+                case 'Comunidade Urbana': return '🏙️';
+                case 'Cálculo Personalizado': return '⚙️';
+                default: return '📊';
+            }
+        }
+        function formatarMoeda(valor) {
+            let num;
+            if (typeof valor === 'number') num = valor;
+            else if (typeof valor === 'string') {
+                const cleanValue = valor.replace(/R\$\s?/, '').replace(/\./g, '').replace(',', '.');
+                num = parseFloat(cleanValue);
+            } else num = 0;
+            if (isNaN(num)) num = 0;
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(num);
+        }
+        function imprimirLista() {
+            const printWindow = window.open('', '', 'height=900,width=1100');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Relatório de Destinação de Valores</title>
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <style>
+                            body {
+                                font-family: 'Segoe UI', Arial, sans-serif;
+                                background: #f4f7fa;
+                                color: #222;
+                                margin: 0; padding: 0;
+                            }
+                            .report-container {
+                                max-width: 900px;
+                                margin: 30px auto;
+                                background: #fff;
+                                border-radius: 16px;
+                                box-shadow: 0 8px 32px rgba(80, 120, 200, 0.15);
+                                padding: 40px 36px 36px 36px;
+                            }
+                            .header {
+                                text-align: center;
+                                margin-bottom: 28px;
+                            }
+                            .header h1 {
+                                font-size: 2.2rem;
+                                color: #2563eb;
+                                font-weight: 700;
+                                margin-bottom: 4px;
+                            }
+                            .header p {
+                                color: #64748b;
+                                font-size: 1rem;
+                                margin: 6px 0;
+                            }
+                            h2 { color: #2563eb; margin-top: 30px; }
+                            .result-card {
+                                background: #f7fafc;
+                                border-radius: 8px;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+                                padding: 18px;
+                                margin-bottom: 18px;
+                            }
+                            .result-card h3 {
+                                font-size: 1.2rem;
+                                color: #2563eb;
+                                margin-bottom: 8px;
+                            }
+                            .summary-cards {
+                                display: flex;
+                                gap: 8px;
+                                margin-bottom: 8px;
+                            }
+                            .summary-card {
+                                flex: 1;
+                                background: #eef2fa;
+                                border-radius: 6px;
+                                padding: 8px;
+                                text-align: center;
+                                font-size: 0.95rem;
+                            }
+                            .summary-card .value {
+                                font-size: 1.18rem;
+                                font-weight: 700;
+                                color: #2563eb;
+                            }
+                            .result-table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin-top: 10px;
+                            }
+                            .result-table th, .result-table td {
+                                padding: 8px 4px;
+                                text-align: center;
+                                border-bottom: 1px solid #eee;
+                                font-size: 0.98rem;
+                            }
+                            .result-table th {
+                                background: #eef2fa;
+                                color: #222;
+                                font-weight: 600;
+                            }
+                            .footer {
+                                text-align: center;
+                                margin-top: 40px;
+                                color: #64748b;
+                                font-size: 0.97rem;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="report-container">
+                            <div class="header">
+                                <h1>Relatório de Destinação de Valores</h1>
+                                <p>Distribuição de valores entre Cúria, Comunidade e Paróquia</p>
+                                <p><strong>Data do Relatório:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+                            </div>
+            `);
+            const sections = [
+                { id: 'urbanaResults', title: '🏙️ Comunidade Urbana' },
+                { id: 'ruralResults', title: '🏘️ Comunidade Rural' },
+                { id: 'personalizedResults', title: '⚙️ Cálculo Personalizado' }
+            ];
+            sections.forEach(section => {
+                const content = document.getElementById(section.id).innerHTML.trim();
+                if (content) printWindow.document.write(`<h2>${section.title}</h2>${content}`);
+            });
+            printWindow.document.write(`
+                            <div class="footer">
+                                Relatório gerado em ${new Date().toLocaleDateString('pt-BR')}
+                            </div>
+                        </div>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+        function baixarExcel() {
+            const sections = ['urbanaResults', 'ruralResults', 'personalizedResults'];
+            const titles = ['🏙️ Comunidade Urbana', '🏘️ Comunidade Rural', '⚙️ Cálculo Personalizado'];
+            let content = `
+                <html>
+                    <head><meta charset="utf-8"><title>Relatório de Destinação</title></head>
+                    <body style="font-family: Arial, sans-serif;">
+                        <h1 style="color: #2563eb; text-align: center;">Relatório de Destinação de Valores</h1>
+                        <p style="text-align: center; color: #64748b;">Gerado em: ${new Date().toLocaleDateString('pt-BR')}</p>
+            `;
+            sections.forEach((sectionId, index) => {
+                const sectionContent = document.getElementById(sectionId).innerHTML.trim();
+                if (sectionContent) content += `<h2 style="color: #2563eb; margin-top: 30px;">${titles[index]}</h2>${sectionContent}`;
+            });
+            content += '</body></html>';
+            const blob = new Blob([content], { type: 'application/vnd.ms-excel' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `relatorio_destinacao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.xls`;
+            link.click();
+            showToast('📊 Arquivo Excel baixado com sucesso!');
+        }
+        function limpar() {
+            if (confirm('Tem certeza que deseja limpar todos os cálculos? Esta ação não pode ser desfeita.')) {
+                document.getElementById('ruralResults').innerHTML = '';
+                document.getElementById('urbanaResults').innerHTML = '';
+                document.getElementById('personalizedResults').innerHTML = '';
+                document.getElementById('valor').value = '';
+                document.getElementById('nomeComunidade').value = '';
+                document.getElementById('tipoComunitario').value = 'urbana';
+                toggleCustomOptions(false);
+                cacheManager.clearData();
+                showToast('🗑️ Todos os cálculos foram limpos e cache foi removido!');
+            }
+        }
+    </script>
+</body>
+</html>
